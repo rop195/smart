@@ -75,10 +75,10 @@ static void system_init(System_Tip *sys_tip)
 	memset((uint8_t *)&sys_tip->sys_pmt->TPInterval, 0, sizeof(System_Paramt));
 
 	strcpy(sys_tip->sys_pmt->CloudCode, "3214"); 
-	strcpy(sys_tip->sys_pmt->UserName,  "myname"); 
-	strcpy(sys_tip->sys_pmt->Password,  "mypassword");
+	strcpy(sys_tip->sys_pmt->UserName,  "hwtest01"); 
+	strcpy(sys_tip->sys_pmt->Password,  "hwpassed01");
 	strcpy(sys_tip->sys_pmt->AppUserID, "myAppUserID");
-	strcpy(sys_tip->sys_pmt->TermCode,  "321409000000");
+	strcpy(sys_tip->sys_pmt->TermCode,  "321409000003");
 
 	sys_tip->sys_pmt->MasterPort       =  20000;
 	sys_tip->sys_pmt->TPInterval       =  10;

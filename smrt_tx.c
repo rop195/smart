@@ -25,6 +25,7 @@ void *smrt_tx(void *arg)
 	Message         msg;
 	System_Tip      *sys_tip;
 	Msg_Header      *head;
+	uint32_t         n;
 
 	sys_tip = (System_Tip *)arg;
 
@@ -50,6 +51,13 @@ void *smrt_tx(void *arg)
 					head = (Msg_Header *)msg.MsgBuf;
 
 					write(sys_tip->sys_sts->g_smrt_sockfd, msg.MsgBuf, head->TotalLen);
+
+					printf("netsend: ");
+					for(n = 0; n < head->TotalLen; n++)
+					{
+						printf("%02X ", msg.MsgBuf[n]);
+					}
+					printf("\n");
 				}
 			}
 		}

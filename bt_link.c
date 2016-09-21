@@ -135,10 +135,6 @@ void *bt_link(void *arg)
 	uint8_t             btdevcnt  =  0;
 	uint8_t            *src;
 	uint32_t            n, i, btcnctnum = 0;
-
-	uint8_t             cmd[] = {0xcc, 0x80, 0x02, 0x03, 0x01, 0x01, 0x00, 0x01};
-	//uint8_t             cmd[] = {0xcc, 0x80, 0x02, 0x03, 0x01, 0x02, 0x00, 0x02};
-	//uint8_t             cmd[] = {0xcc, 0x80, 0x02, 0x03, 0x01, 0x04, 0x00, 0x04};
 	
 	/*
 	bddevice = (Bd_Device *)malloc(sizeof(Bd_Device));
@@ -311,8 +307,6 @@ void *bt_link(void *arg)
 
 								if(result == 0)
 								{
-									printf("%d\n", write(remotsock, cmd, 8));
-
 									printf("connect %s!\n", btname);
 
 									node = (Bd_Node *)malloc(sizeof(Bd_Node));

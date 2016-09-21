@@ -31,21 +31,7 @@ void *smrt_process(void *arg)
 
 		if(len > 0)
 		{
-			result = protocol(msg.MsgBuf, sys_tip);
-
-			switch(result)
-			{
-				case ACK:
-					package(msg.MsgBuf, sys_tip);
-
-					msg.MsgType = MSG_TYPE_PROTOCOL;
-
-					msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
-					break;
-
-				default:
-					break;
-			}
+			result = protocol(&msg, sys_tip);
 		}
 	}
 

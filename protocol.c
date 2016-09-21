@@ -6,7 +6,34 @@
 #include "protocol.h"
 #include "crc32.h"
 
-static int smrt_set_basic(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+void package(uint8_t *buf, System_Tip *sys_tip)
+{
+	Msg_Attachment *attachment;
+	Msg_Header     *head;
+
+	head = (Msg_Header *)buf;
+
+	buf += head->TotalLen;
+
+	memset(buf, 0, sizeof(Msg_Attachment));
+
+	attachment = (Msg_Attachment *)buf;
+
+	memcpy(head->TermCode, sys_tip->sys_pmt->TermCode, sizeof(sys_tip->sys_pmt->TermCode));
+
+	head->MajorVer = MAJOR_VERSION;
+	head->MinorVer = MINOR_VERSION;
+
+	if((head->Flags & SESSIONID) == SESSIONID)
+	{
+		attachment->SessionId = sys_tip->sys_sts->SessionId;
+		head->TotalLen       += sizeof(sys_tip->sys_sts->SessionId);
+	}
+
+	head->CRC32 = crc32((uint8_t *)&head->SeqId, head->TotalLen - MSG_BYTES_OFFSET);
+}
+
+static int smrt_set_basic(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t n, *dst, *src;
 
@@ -36,10 +63,14 @@ static int smrt_set_basic(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_set_network(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_set_network(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t n, *dst, *src;
 
@@ -69,10 +100,14 @@ static int smrt_set_network(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_set_interface(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_set_interface(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t    *src, *dst, n;
 	Msg_Common *msg_rsp;
@@ -103,10 +138,14 @@ static int smrt_set_interface(Msg_Header *head, uint8_t *buf, System_Tip *sys_ti
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_set_NTP(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_set_NTP(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t    *src, *dst, n;
 	Msg_Common *msg_rsp;
@@ -137,10 +176,14 @@ static int smrt_set_NTP(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_set_PKey(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_set_PKey(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t    *src, *dst, n;
 	Msg_Common *msg_rsp;
@@ -171,10 +214,14 @@ static int smrt_set_PKey(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_set_interval(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_set_interval(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t        *src, *dst, n;
 	Msg_Common     *msg_rsp;
@@ -205,10 +252,14 @@ static int smrt_set_interval(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_query_basic(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_query_basic(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	Smrt_Basic  *basic;
 
@@ -226,10 +277,14 @@ static int smrt_query_basic(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Smrt_Basic);
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_query_net(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_query_net(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t n, *src, *dst;
 
@@ -249,10 +304,14 @@ static int smrt_query_net(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Smrt_Basic);
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_query_intf(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_query_intf(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t n, *src, *dst;
 
@@ -272,10 +331,14 @@ static int smrt_query_intf(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Smrt_Intf);
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_query_NTP(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_query_NTP(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t n, *src, *dst;
 
@@ -295,10 +358,14 @@ static int smrt_query_NTP(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Smrt_NTP);
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_query_PKey(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_query_PKey(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t n, *src, *dst;
 
@@ -318,10 +385,14 @@ static int smrt_query_PKey(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Smrt_PKey);
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_query_videosource(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_query_videosource(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	uint8_t n, *src, *dst;
 
@@ -341,14 +412,95 @@ static int smrt_query_videosource(Msg_Header *head, uint8_t *buf, System_Tip *sy
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Smrt_RTSPServ);
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_ctrl_btcmd(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_query_btonline(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+{
+	Smrt_BtCnntNode  *node;
+	Bd_Node          *bt; 
+	uint16_t          len, space;
+	uint8_t           flag = 0;
+
+	if(sys_tip->sys_sts->g_link_status != LINK_LOGIN)
+	{
+		return NONE_ACK;
+	}
+
+	printf("%s:%d query connectd bt device\n", __FUNCTION__, __LINE__);
+
+	space = MSG_LEN - sizeof(Msg_Header) - sizeof(sys_tip->sys_sts->SessionId);
+	len   = space;
+
+	node           = (Smrt_BtCnntNode *)buf;
+	bt             = sys_tip->sys_sts->bd_list_head;
+	head->TotalLen = sizeof(Msg_Header);
+
+	pthread_mutex_lock(&sys_tip->sys_sts->blue_mutex);
+
+	while(bt != NULL)
+	{
+		if(len > sizeof(Smrt_BtCnntNode))
+		{
+			memcpy(node->EquipUID,  bt->EquipUID,  sizeof(node->EquipUID));
+			memcpy(node->EquipName, bt->EquipName, sizeof(node->EquipName));
+
+			len            -= sizeof(Smrt_BtCnntNode);
+			head->TotalLen += sizeof(Smrt_BtCnntNode);
+			bt              = (Bd_Node *)bt->next;
+			node++;
+		}
+		else
+		{
+			if(flag == 0)
+			{
+				flag++;
+
+				head->Flags = SESSIONID | FIRST_FRAME;
+			}
+			else
+			{
+				head->Flags = SESSIONID | MIDDLE_FRAME;
+			}
+
+			package(msg->MsgBuf, sys_tip);
+
+			msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
+			len            = space;
+			head->TotalLen = sizeof(Msg_Header);
+			node           = (Smrt_BtCnntNode *)buf;
+		}
+	}
+
+	pthread_mutex_unlock(&sys_tip->sys_sts->blue_mutex);
+
+	if(flag == 0)
+	{
+		head->Flags = SESSIONID | SINGLE_FRAME;
+	}
+	else
+	{
+		head->Flags = SESSIONID | FINISH_FRAME;
+	}
+
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
+	return ACK;
+}
+
+static int smrt_ctrl_btcmd(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	Msg_Common     *msg_rsp;
-	Message         msg;
-	uint8_t         len = 0;
+	Smrt_BtCmd     *btcmd[0];
+	Message         btmsg;
+	uint8_t         *src, *dst, len = 0;
 
 	if(sys_tip->sys_sts->g_link_status != LINK_LOGIN)
 	{
@@ -357,26 +509,20 @@ static int smrt_ctrl_btcmd(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 
 	printf("%s:%d get bluetooth cmd\n", __FUNCTION__, __LINE__);
 
-	msg.MsgType = MSG_TYPE_BLUETOOTH;
+	msg_rsp  = (Msg_Common *)buf;
+	btcmd[0] = (Smrt_BtCmd *)buf;
+	btcmd[1] = (Smrt_BtCmd *)btmsg.MsgBuf;
 
-	if((head->Flags & SESSIONID) == SESSIONID)
-	{
-		len += sizeof(sys_tip->sys_sts->SessionId);
-	}
+	dst = btmsg.MsgBuf + sizeof(Smrt_BtCmd);
+	src = buf + sizeof(Smrt_BtCmd);
 
-	if((head->Flags & HAS_PASSWORD) == HAS_PASSWORD)
-	{
-		len += sizeof(sys_tip->sys_sts->password);
-	}
+	btmsg.MsgType = MSG_TYPE_BLUETOOTH;
+	
+	btcmd[1]->len = btcmd[0]->len;
+	memcpy(btcmd[1]->EquipUID, btcmd[0]->EquipUID, sizeof(btcmd[0]->EquipUID));
+	memcpy(dst, src, btcmd[0]->len);
 
-	if((head->Flags & HAS_TIMESTAMP) == HAS_TIMESTAMP)
-	{
-		len += 6;
-	}
-
-	memcpy(msg.MsgBuf, buf, head->TotalLen - sizeof(Msg_Header) - len);
-
-	msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, &btmsg, MSG_LEN, 0);
 
 	msg_rsp->RespServType = head->ServType;
 	msg_rsp->RespServCode = head->ServCode;
@@ -387,10 +533,14 @@ static int smrt_ctrl_btcmd(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	head->Flags    = SESSIONID | SINGLE_FRAME;
 	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
 
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
 	return ACK;
 }
 
-static int smrt_resp_login(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_resp_login(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	Msg_Attachment  *attachment;
 	Msg_Common      *resp;
@@ -405,6 +555,10 @@ static int smrt_resp_login(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 		
 		sys_tip->sys_sts->SessionId     = attachment->SessionId;
 		sys_tip->sys_sts->g_link_status = LINK_LOGIN;
+
+		package(msg->MsgBuf, sys_tip);
+
+		msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
 
 		printf("%s:%d get SessionId = %d\n", __FUNCTION__, __LINE__, sys_tip->sys_sts->SessionId);
 	}
@@ -421,7 +575,7 @@ static int smrt_resp_heartbeat(System_Tip *sys_tip)
 	pthread_mutex_unlock(&sys_tip->sys_sts->argc_mutex);
 }
 
-static int smrt_resp(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+static int smrt_resp(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	int             result;
 	Msg_Common      *msg_rsp;
@@ -435,7 +589,7 @@ static int smrt_resp(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 			switch(msg_rsp->RespServCode)
 			{
 				case SERV_CODE_LOGON:
-					result = smrt_resp_login(head, buf, sys_tip);
+					result = smrt_resp_login(msg, head, buf, sys_tip);
 					break;
 
 				case SERV_CODE_HEATBIT:
@@ -465,49 +619,22 @@ static int smrt_resp(Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 	return result;
 }
 
-void package(uint8_t *buf, System_Tip *sys_tip)
-{
-	Msg_Attachment *attachment;
-	Msg_Header     *head;
-
-	head = (Msg_Header *)buf;
-
-	buf += head->TotalLen;
-
-	memset(buf, 0, sizeof(Msg_Attachment));
-
-	attachment = (Msg_Attachment *)buf;
-
-	memcpy(head->TermCode, sys_tip->sys_pmt->TermCode, sizeof(sys_tip->sys_pmt->TermCode));
-
-	head->MajorVer = MAJOR_VERSION;
-	head->MinorVer = MINOR_VERSION;
-
-	if((head->Flags & SESSIONID) == SESSIONID)
-	{
-		attachment->SessionId = sys_tip->sys_sts->SessionId;
-		head->TotalLen       += sizeof(sys_tip->sys_sts->SessionId);
-	}
-
-	head->CRC32 = crc32((uint8_t *)&head->SeqId, head->TotalLen - MSG_BYTES_OFFSET);
-}
-
-int protocol(uint8_t *buf, System_Tip *sys_tip)
+int protocol(Message *msg, System_Tip *sys_tip)
 {
 	Msg_Header  *head;
+	int          result;
 
-	int result;
+	head         = (Msg_Header *)msg->MsgBuf;
+	msg->MsgType = MSG_TYPE_PROTOCOL;
 
-	head = (Msg_Header *)buf;
-
-	if(head->CRC32 == crc32(buf + MSG_BYTES_OFFSET, head->TotalLen - MSG_BYTES_OFFSET))
+	if(head->CRC32 == crc32(msg->MsgBuf + MSG_BYTES_OFFSET, head->TotalLen - MSG_BYTES_OFFSET))
 	{
 		printf("servtype : %d\n", head->ServType);
 		printf("servcode : %d\n", head->ServCode);
 
 		for(result = 0; result < head->TotalLen; result++)
 		{
-			printf("%x ", buf[result]);
+			printf("%02X ", msg->MsgBuf[result]);
 		}
 
 		printf("\n");
@@ -518,27 +645,27 @@ int protocol(uint8_t *buf, System_Tip *sys_tip)
 				switch(head->ServCode)
 				{
 					case SERV_CODE_BASE:
-						result = smrt_set_basic(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_set_basic(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_NET:
-						result = smrt_set_network(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_set_network(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_INTF:
-						result = smrt_set_interface(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_set_interface(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_NTP:
-						result = smrt_set_NTP(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_set_NTP(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_PKEY:
-						result = smrt_set_PKey(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_set_PKey(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_SETINTERVAL:
-						result = smrt_set_interval(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_set_interval(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					default:
@@ -551,30 +678,34 @@ int protocol(uint8_t *buf, System_Tip *sys_tip)
 				switch(head->ServCode)
 				{
 					case SERV_CODE_BASE:
-						result = smrt_query_basic(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_query_basic(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_NET:
-						result = smrt_query_net(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_query_net(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_INTF:
-						result = smrt_query_intf(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_query_intf(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_NTP:
-						result = smrt_query_NTP(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_query_NTP(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_PKEY:
-						result = smrt_query_PKey(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_query_PKey(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_VIDEOSOURCE:
-						result = smrt_query_videosource(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_query_videosource(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_QRYBT:
+						break;
+
+					case SERV_CODE_BTCNNT:
+						result = smrt_query_btonline(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					default:
@@ -605,7 +736,7 @@ int protocol(uint8_t *buf, System_Tip *sys_tip)
 						break;
 
 					case SERV_CODE_BTCMD:
-						result = smrt_ctrl_btcmd(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_ctrl_btcmd(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_FILERENAME:
@@ -642,7 +773,7 @@ int protocol(uint8_t *buf, System_Tip *sys_tip)
 				switch(head->ServCode)
 				{
 					case SERV_CODE_RESP:
-						result = smrt_resp(head, buf + sizeof(Msg_Header), sys_tip);
+						result = smrt_resp(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					default:

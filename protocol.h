@@ -15,7 +15,7 @@
 
 #define  MSG_BYTES_OFFSET        8
 
-#define  MSG_LEN                 256
+#define  MSG_LEN                 1024
 
 #define  MSG_FRAME_HEAD          0xAAFF
 
@@ -28,8 +28,14 @@
 #define  BT_MAC_NOT_MATCH        0
 #define  BT_MAC_MATCH            1
 
+#define  BT_UID_NOT_MATCH        0
+#define  BT_UID_MATCH            1
+
 #define  SESSIONID               0x20
 #define  SINGLE_FRAME            0x06
+#define  FIRST_FRAME             0x04
+#define  MIDDLE_FRAME            0x00
+#define  FINISH_FRAME            0X02
 #define  HAS_PASSWORD            0x10
 #define  HAS_TIMESTAMP           0x08
 
@@ -70,6 +76,7 @@
 #define SERV_CODE_SETINTERVAL    7              //传感器采集周期设置
 #define SERV_CODE_VIDEOSOURCE    7              //视频源地址查询
 #define SERV_CODE_QRYBT          9              //可见未知蓝牙设备列表查询
+#define SERV_CODE_BTCNNT         11             //已连接的蓝牙设备列表
 
 #define SERV_TYPE_CTRL           5              //命令控制
 #define SERV_CODE_RESET          1              //系统复位
@@ -187,8 +194,8 @@ typedef struct
 
 typedef struct 
 {
-	long MsgType;
-	char MsgBuf[MSG_LEN];
+	long    MsgType;
+	uint8_t MsgBuf[MSG_LEN];
 }Message;
 
 typedef struct 
@@ -312,8 +319,8 @@ typedef struct
 
 typedef struct 
 {
-	uint8_t  EquipMAC[6];
-	uint16_t len;
+	uint8_t  EquipUID[24];
+	uint32_t len;
 }Smrt_BtCmd;
 
 typedef struct 
@@ -323,8 +330,13 @@ typedef struct
 	uint16_t FrameNum;
 }Smrt_BtUpload;
 
+typedef struct 
+{
+	uint8_t EquipUID[24];
+	uint8_t EquipName[32];
+}Smrt_BtCnntNode;
 
-extern int protocol(uint8_t *buf, System_Tip *sys_tip);
-extern void package(uint8_t *buf, System_Tip *sys_tip);
+
+extern int protocol(Message *msg, System_Tip *sys_tip);
 
 #endif

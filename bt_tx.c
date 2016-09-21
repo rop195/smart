@@ -21,19 +21,19 @@
 
 #include "protocol.h"
 
-static int bt_MAC_cmp(uint8_t *src, uint8_t *dst)
+static int bt_UID_cmp(uint8_t *src, uint8_t *dst)
 {
 	uint8_t n;
 
-	for(n = 0; n < 6; n++)
+	for(n = 0; n < 24; n++)
 	{
 		if(*src++ != *dst++)
 		{
-			return BT_MAC_NOT_MATCH;
+			return BT_UID_NOT_MATCH;
 		}
 	}
 
-	return BT_MAC_MATCH;
+	return BT_UID_MATCH;
 }
 
 void *bt_tx(void *arg)
@@ -60,7 +60,7 @@ void *bt_tx(void *arg)
 
 			while(node != NULL)
 			{
-				if(bt_MAC_cmp(btcmd->EquipMAC, node->EquipMAC) == BT_MAC_MATCH)
+				if(bt_UID_cmp(btcmd->EquipUID, node->EquipUID) == BT_UID_MATCH)
 				{
 					write(node->socketfd, msg.MsgBuf + sizeof(Smrt_BtCmd), btcmd->len);
 
