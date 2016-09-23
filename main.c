@@ -20,7 +20,7 @@
 #include "smrt_link.h"
 #include "smrt_sensor.h"
 #include "smrt_process.h"
-#include "bt_link.h"
+#include "bt_inquiry.h"
 #include "bt_rcv.h"
 #include "bt_tx.h"
 
@@ -77,7 +77,7 @@ static void system_init(System_Tip *sys_tip)
 	strcpy(sys_tip->sys_pmt->CloudCode, "3214"); 
 	strcpy(sys_tip->sys_pmt->UserName,  "hwtest01"); 
 	strcpy(sys_tip->sys_pmt->Password,  "hwpassed01");
-	strcpy(sys_tip->sys_pmt->AppUserID, "myAppUserID");
+	strcpy(sys_tip->sys_pmt->AppUserID, "hwtest01");
 	strcpy(sys_tip->sys_pmt->TermCode,  "321409000003");
 
 	sys_tip->sys_pmt->MasterPort       =  20000;
@@ -95,11 +95,12 @@ static void system_init(System_Tip *sys_tip)
 	sys_tip->sys_sts->RTSPServIP[2]    =  0;
 	sys_tip->sys_sts->RTSPServIP[3]    =  105;
 	sys_tip->sys_sts->bd_list_head     =  NULL;
+	sys_tip->sys_sts->bd_unkn_list     =  NULL;
 }
 
 int main()
 {
-	pthread_t       tid[8];
+	pthread_t       tid[9];
 
 	System_Paramt   sys_paramt;
 	System_Status   sys_status;
@@ -114,13 +115,14 @@ int main()
 	
 	pthread_mutex_init(&sys_tip.sys_sts->argc_mutex, NULL);
 	pthread_mutex_init(&sys_tip.sys_sts->blue_mutex, NULL);
+	pthread_mutex_init(&sys_tip.sys_sts->list_mutex, NULL);
 
 	pthread_create(&tid[0], NULL, smrt_rcv,      &sys_tip);
 	pthread_create(&tid[1], NULL, smrt_tx,       &sys_tip);
 	pthread_create(&tid[2], NULL, smrt_link,     &sys_tip);
 	pthread_create(&tid[3], NULL, smrt_sensor,   &sys_tip);
 	pthread_create(&tid[4], NULL, smrt_process,  &sys_tip);
-	pthread_create(&tid[5], NULL, bt_link,       &sys_tip);
+	pthread_create(&tid[5], NULL, bt_inquiry,    &sys_tip);
 	pthread_create(&tid[6], NULL, bt_rcv,        &sys_tip);
 	pthread_create(&tid[7], NULL, bt_tx,         &sys_tip);
 

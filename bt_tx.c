@@ -20,21 +20,7 @@
 #include <bluetooth/hci_lib.h>
 
 #include "protocol.h"
-
-static int bt_UID_cmp(uint8_t *src, uint8_t *dst)
-{
-	uint8_t n;
-
-	for(n = 0; n < 24; n++)
-	{
-		if(*src++ != *dst++)
-		{
-			return BT_UID_NOT_MATCH;
-		}
-	}
-
-	return BT_UID_MATCH;
-}
+#include "misc.h"
 
 void *bt_tx(void *arg)
 {

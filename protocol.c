@@ -1,10 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/msg.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "protocol.h"
 #include "crc32.h"
+#include "misc.h"
 
 void package(uint8_t *buf, System_Tip *sys_tip)
 {
@@ -419,6 +424,82 @@ static int smrt_query_videosource(Message *msg, Msg_Header *head, uint8_t *buf, 
 	return ACK;
 }
 
+static int smrt_query_unkownbt(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+{
+	Smrt_UnkownNode   *node;
+	Bd_Node           *bt;
+	uint16_t           len, space;
+	uint8_t            flag = 0;
+
+	if(sys_tip->sys_sts->g_link_status != LINK_LOGIN)
+	{
+		return NONE_ACK;
+	}
+
+	printf("%s:%d query unkown bt device\n", __FUNCTION__, __LINE__);
+
+	space = MSG_LEN - sizeof(Msg_Header) - sizeof(sys_tip->sys_sts->SessionId);
+	len   = space;
+
+	node           = (Smrt_UnkownNode *)buf;
+	bt             = sys_tip->sys_sts->bd_unkn_list;
+	head->TotalLen = sizeof(Msg_Header);
+
+	pthread_mutex_lock(&sys_tip->sys_sts->blue_mutex);
+
+	while(bt != NULL)
+	{
+		if(len > sizeof(Smrt_UnkownNode))
+		{
+			memcpy(node->EquipName, bt->EquipName, sizeof(node->EquipName));
+			memcpy(node->EquipMAC,  bt->EquipMAC,  sizeof(node->EquipMAC));
+
+			len            -= sizeof(Smrt_UnkownNode);
+			head->TotalLen += sizeof(Smrt_UnkownNode);
+			bt              = (Bd_Node *)bt->next;
+			node++;
+		}
+		else
+		{
+			if(flag == 0)
+			{
+				flag++;
+
+				head->Flags = SESSIONID | FIRST_FRAME;
+			}
+			else
+			{
+				head->Flags = SESSIONID | MIDDLE_FRAME;
+			}
+
+			package(msg->MsgBuf, sys_tip);
+
+			msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
+			len            = space;
+			head->TotalLen = sizeof(Msg_Header);
+			node           = (Smrt_UnkownNode *)buf;
+		}
+	}
+
+	pthread_mutex_unlock(&sys_tip->sys_sts->blue_mutex);
+
+	if(flag == 0)
+	{
+		head->Flags = SESSIONID | SINGLE_FRAME;
+	}
+	else
+	{
+		head->Flags = SESSIONID | FINISH_FRAME;
+	}
+
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
+	return ACK;
+}
+
 static int smrt_query_btonline(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
 {
 	Smrt_BtCnntNode  *node;
@@ -493,6 +574,148 @@ static int smrt_query_btonline(Message *msg, Msg_Header *head, uint8_t *buf, Sys
 	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
 
 	return ACK;
+}
+
+static int smrt_ctrl_btcon(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+{
+	Msg_Common    *msg_rsp;
+	Bd_Device     *node, bddevice;
+	struct stat    statbuf;
+	int            filesize = 0;
+	int            filefd;
+
+	if(sys_tip->sys_sts->g_link_status != LINK_LOGIN)
+	{
+		return NONE_ACK;
+	}
+
+	printf("%s:%d ctrl bt device connect\n", __FUNCTION__, __LINE__);
+
+	msg_rsp  = (Msg_Common *)buf;
+	node     = (Bd_Device *)buf;
+
+	memcpy(bddevice.EquipMAC, node->EquipMAC, sizeof(bddevice.EquipMAC));
+	memcpy(bddevice.EquipUID, node->EquipUID, sizeof(bddevice.EquipUID));
+	memcpy(bddevice.PinCode,  node->PinCode,  sizeof(bddevice.PinCode));
+	bddevice.PINLen = node->PINLen;
+
+	msg_rsp->RespServType = head->ServType;
+	msg_rsp->RespServCode = head->ServCode;
+	msg_rsp->ErrorCode    = OK;
+
+	head->ServType = SERV_TYPE_RESP;
+	head->ServCode = SERV_CODE_RESP;
+	head->Flags    = SESSIONID | SINGLE_FRAME;
+	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
+
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
+	pthread_mutex_lock(&sys_tip->sys_sts->list_mutex);
+
+	stat(BT_DEVICE_LIST, &statbuf);  
+    
+	filesize = statbuf.st_size;
+
+	filefd = open(BT_DEVICE_LIST, O_RDWR, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	lseek(filefd, filesize, SEEK_SET);
+
+	write(filefd, bddevice.EquipUID, sizeof(Bd_Device));
+
+	close(filefd);
+
+	pthread_mutex_unlock(&sys_tip->sys_sts->list_mutex);
+
+	return ACK;
+}
+
+static int smrt_ctrl_btdel(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
+{
+	Msg_Common    *msg_rsp;
+	Bd_Device     *node, *temp;
+	struct stat    statbuf;
+	int            filesize = 0;
+	int            filefd;
+	uint8_t        UID[UID_LEN];
+	uint32_t       n, i;
+
+	if(sys_tip->sys_sts->g_link_status != LINK_LOGIN)
+	{
+		return NONE_ACK;
+	}
+
+	printf("%s:%d ctrl bt device deletel\n", __FUNCTION__, __LINE__);
+
+	msg_rsp  = (Msg_Common *)buf;
+	
+	memcpy(UID, buf, UID_LEN);
+
+	msg_rsp->RespServType = head->ServType;
+	msg_rsp->RespServCode = head->ServCode;
+	msg_rsp->ErrorCode    = OK;
+
+	head->ServType = SERV_TYPE_RESP;
+	head->ServCode = SERV_CODE_RESP;
+	head->Flags    = SESSIONID | SINGLE_FRAME;
+	head->TotalLen = sizeof(Msg_Header) + sizeof(Msg_Common);
+
+	package(msg->MsgBuf, sys_tip);
+
+	msgsnd(sys_tip->sys_sts->g_smrt_msg, msg, MSG_LEN, 0);
+
+	pthread_mutex_lock(&sys_tip->sys_sts->list_mutex);
+
+	stat(BT_DEVICE_LIST, &statbuf);  
+    
+	filesize = statbuf.st_size;
+
+	if(filesize > 0)
+	{
+		node = (Bd_Device *)malloc(filesize);
+
+		filefd = open(BT_DEVICE_LIST, O_RDWR, S_IRWXU | S_IRWXG | S_IRWXO);
+
+		read(filefd, node->EquipUID, filesize);
+
+		temp = node;
+
+		for(n = 0; n < filesize / sizeof(Bd_Device); n++)
+		{
+			if(bt_UID_cmp(UID, temp->EquipUID) == BT_UID_MATCH)
+			{
+				i = n + 1;
+
+				while(i < filesize / sizeof(Bd_Device))
+				{
+					memcpy(temp->EquipUID, (temp + 1)->EquipUID, sizeof(temp->EquipUID));
+					memcpy(temp->EquipMAC, (temp + 1)->EquipMAC, sizeof(temp->EquipMAC));
+					memcpy(temp->PinCode,  (temp + 1)->PinCode,  sizeof(temp->PinCode));
+					temp->PINLen = (temp + 1)->PINLen;
+
+					i++;
+					temp++;
+				}
+
+				filesize -= sizeof(Bd_Device);
+
+				break;
+			}
+			else
+			{
+				temp++;
+			}
+		}
+
+		write(filefd, node->EquipUID, filesize);
+
+		ftruncate(filefd, filesize);
+
+		close(filefd);
+	}
+
+	pthread_mutex_unlock(&sys_tip->sys_sts->list_mutex);
 }
 
 static int smrt_ctrl_btcmd(Message *msg, Msg_Header *head, uint8_t *buf, System_Tip *sys_tip)
@@ -629,15 +852,15 @@ int protocol(Message *msg, System_Tip *sys_tip)
 
 	if(head->CRC32 == crc32(msg->MsgBuf + MSG_BYTES_OFFSET, head->TotalLen - MSG_BYTES_OFFSET))
 	{
-		printf("servtype : %d\n", head->ServType);
-		printf("servcode : %d\n", head->ServCode);
+		//printf("servtype : %d\n", head->ServType);
+		//printf("servcode : %d\n", head->ServCode);
 
-		for(result = 0; result < head->TotalLen; result++)
-		{
-			printf("%02X ", msg->MsgBuf[result]);
-		}
+		//for(result = 0; result < head->TotalLen; result++)
+		//{
+		//	printf("%02X ", msg->MsgBuf[result]);
+		//}
 
-		printf("\n");
+		//printf("\n");
 
 		switch(head->ServType)
 		{
@@ -702,6 +925,7 @@ int protocol(Message *msg, System_Tip *sys_tip)
 						break;
 
 					case SERV_CODE_QRYBT:
+						result = smrt_query_unkownbt(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_BTCNNT:
@@ -730,9 +954,11 @@ int protocol(Message *msg, System_Tip *sys_tip)
 						break;
 
 					case SERV_CODE_BTCON:
+						result = smrt_ctrl_btcon(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_BTDEL:
+						result = smrt_ctrl_btdel(msg, head, msg->MsgBuf + sizeof(Msg_Header), sys_tip);
 						break;
 
 					case SERV_CODE_BTCMD:

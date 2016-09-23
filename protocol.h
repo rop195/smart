@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/rfcomm.h>
 
 #define  SMRT_EQUIPID            "SMRTGEAR"
 #define  SMRT_CLOUDCODE          "3214"
@@ -11,11 +13,14 @@
 #define  SMRT_APPUSERID          "rop195@163.com  "         
 #define  SMRT_TERMCODE           "321409000001"
 
+#define  BT_DEVICE_LIST          "./bt_deivice_list"
+
 #define  DEBUG
 
 #define  MSG_BYTES_OFFSET        8
 
 #define  MSG_LEN                 1024
+#define  UID_LEN                 24
 
 #define  MSG_FRAME_HEAD          0xAAFF
 
@@ -110,6 +115,7 @@ typedef struct
 	uint8_t EquipName[32];
 	uint8_t EquipMAC[6];
 	uint8_t EquipUID[24];
+	struct  sockaddr_rc  bluetaddr;
 	int     socketfd;
 	void    *pre;
 	void    *next;
@@ -117,8 +123,8 @@ typedef struct
 
 typedef struct 
 {
-	uint8_t EquipMAC[6];
 	uint8_t EquipUID[24];
+	uint8_t EquipMAC[6];
 	uint8_t PINLen;
 	uint8_t PinCode[16];
 }Bd_Device;
@@ -173,6 +179,7 @@ typedef struct
 {
 	pthread_mutex_t argc_mutex;
 	pthread_mutex_t blue_mutex;
+	pthread_mutex_t list_mutex;
 	uint32_t        SessionId;
 	uint32_t        g_heartbeat_tick;
 	uint32_t        g_heartbeat_cnts;
@@ -184,6 +191,7 @@ typedef struct
 	uint8_t         RTSPServIP[4];
 	uint16_t        RTSPServPort;
 	Bd_Node         *bd_list_head;
+	Bd_Node         *bd_unkn_list;
 }System_Status;
 
 typedef struct 
@@ -335,6 +343,12 @@ typedef struct
 	uint8_t EquipUID[24];
 	uint8_t EquipName[32];
 }Smrt_BtCnntNode;
+
+typedef struct 
+{
+	uint8_t EquipName[32];
+	uint8_t EquipMAC[6];
+}Smrt_UnkownNode;
 
 
 extern int protocol(Message *msg, System_Tip *sys_tip);
