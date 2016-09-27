@@ -115,7 +115,6 @@ typedef struct
 	uint8_t EquipName[32];
 	uint8_t EquipMAC[6];
 	uint8_t EquipUID[24];
-	struct  sockaddr_rc  bluetaddr;
 	int     socketfd;
 	void    *pre;
 	void    *next;
@@ -126,7 +125,7 @@ typedef struct
 	uint8_t EquipUID[24];
 	uint8_t EquipMAC[6];
 	uint8_t PINLen;
-	uint8_t PinCode[16];
+	uint8_t PinCode[8];
 }Bd_Device;
 
 typedef struct 
@@ -199,6 +198,12 @@ typedef struct
 	System_Paramt  *sys_pmt;
 	System_Status  *sys_sts; 
 }System_Tip;
+
+typedef struct 
+{
+	System_Tip  *sys_tip;
+	uint8_t     *MAC;
+}Bd_Link;
 
 typedef struct 
 {
@@ -349,6 +354,7 @@ typedef struct
 	uint8_t EquipName[32];
 	uint8_t EquipMAC[6];
 }Smrt_UnkownNode;
+
 
 
 extern int protocol(Message *msg, System_Tip *sys_tip);

@@ -84,7 +84,7 @@ void *smrt_sensor(void *arg)
 				head->CRC32           = crc32((uint8_t *)&head->SeqId, head->TotalLen - MSG_BYTES_OFFSET);
 
 				msg.MsgType = MSG_TYPE_PROTOCOL;
-				msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
+				//msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
 			}
 
 			if(++hmcnts > sys_tip->sys_pmt->HMInterval)
@@ -102,7 +102,7 @@ void *smrt_sensor(void *arg)
 				head->CRC32           = crc32((uint8_t *)&head->SeqId, head->TotalLen - MSG_BYTES_OFFSET);
 
 				msg.MsgType = MSG_TYPE_PROTOCOL;
-				msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
+				//msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
 			}
 
 			if(++aircnts > sys_tip->sys_pmt->AirInterval)
@@ -120,7 +120,7 @@ void *smrt_sensor(void *arg)
 				head->CRC32           = crc32((uint8_t *)&head->SeqId, head->TotalLen - MSG_BYTES_OFFSET);
 
 				msg.MsgType = MSG_TYPE_PROTOCOL;
-				msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
+				//msgsnd(sys_tip->sys_sts->g_smrt_msg, &msg, MSG_LEN, 0);
 			}
 		}
 	}

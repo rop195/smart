@@ -36,8 +36,8 @@ void *smrt_rcv(void *arg)
 
 		server.sin_family      = AF_INET;
 		server.sin_port        = htons(sys_tip->sys_pmt->MasterPort);
-		server.sin_addr.s_addr = inet_addr("120.25.152.19");
-//		server.sin_addr.s_addr = inet_addr("192.168.1.6");
+//		server.sin_addr.s_addr = inet_addr("120.25.152.19");
+		server.sin_addr.s_addr = inet_addr("192.168.0.114");
 
 		result = connect(sys_tip->sys_sts->g_smrt_sockfd, (struct sockaddr *)&server, sizeof(struct sockaddr));
 

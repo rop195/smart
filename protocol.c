@@ -852,15 +852,15 @@ int protocol(Message *msg, System_Tip *sys_tip)
 
 	if(head->CRC32 == crc32(msg->MsgBuf + MSG_BYTES_OFFSET, head->TotalLen - MSG_BYTES_OFFSET))
 	{
-		//printf("servtype : %d\n", head->ServType);
-		//printf("servcode : %d\n", head->ServCode);
+		printf("\n");
+		printf("servtype : %d\n", head->ServType);
+		printf("servcode : %d\n", head->ServCode);
 
-		//for(result = 0; result < head->TotalLen; result++)
-		//{
-		//	printf("%02X ", msg->MsgBuf[result]);
-		//}
-
-		//printf("\n");
+		for(result = 0; result < head->TotalLen; result++)
+		{
+			printf("%02X ", msg->MsgBuf[result]);
+		}
+		printf("\n");
 
 		switch(head->ServType)
 		{

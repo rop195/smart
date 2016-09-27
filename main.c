@@ -20,7 +20,7 @@
 #include "smrt_link.h"
 #include "smrt_sensor.h"
 #include "smrt_process.h"
-#include "bt_inquiry.h"
+#include "bt_link.h"
 #include "bt_rcv.h"
 #include "bt_tx.h"
 
@@ -100,7 +100,7 @@ static void system_init(System_Tip *sys_tip)
 
 int main()
 {
-	pthread_t       tid[9];
+	pthread_t       tid[8];
 
 	System_Paramt   sys_paramt;
 	System_Status   sys_status;
@@ -122,8 +122,7 @@ int main()
 	pthread_create(&tid[2], NULL, smrt_link,     &sys_tip);
 	pthread_create(&tid[3], NULL, smrt_sensor,   &sys_tip);
 	pthread_create(&tid[4], NULL, smrt_process,  &sys_tip);
-	pthread_create(&tid[5], NULL, bt_inquiry,    &sys_tip);
-	pthread_create(&tid[6], NULL, bt_rcv,        &sys_tip);
+	pthread_create(&tid[5], NULL, bt_link,       &sys_tip);
 	pthread_create(&tid[7], NULL, bt_tx,         &sys_tip);
 
 	pthread_join(tid[0], NULL);
@@ -132,6 +131,5 @@ int main()
 	pthread_join(tid[3], NULL);
 	pthread_join(tid[4], NULL);
 	pthread_join(tid[5], NULL);
-	pthread_join(tid[6], NULL);
 	pthread_join(tid[7], NULL);
 }

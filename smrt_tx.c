@@ -52,12 +52,13 @@ void *smrt_tx(void *arg)
 
 					write(sys_tip->sys_sts->g_smrt_sockfd, msg.MsgBuf, head->TotalLen);
 
-					//printf("netsend: ");
-					//for(n = 0; n < head->TotalLen; n++)
-					//{
-					//	printf("%02X ", msg.MsgBuf[n]);
-					//}
-					//printf("\n");
+					printf("\n");
+					printf("gateway send: ");
+					for(n = 0; n < head->TotalLen; n++)
+					{
+						printf("%02X ", msg.MsgBuf[n]);
+					}
+					printf("\n\n");
 				}
 			}
 		}
