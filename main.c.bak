@@ -164,6 +164,8 @@ int main()
 	smrt_msg_init(&sys_tip.sys_sts->g_smrt_msg);
 
 	system("mplayer ./hello.mp3");
+
+	sleep(3);
 	
 	pthread_mutex_init(&sys_tip.sys_sts->argc_mutex, NULL);
 	pthread_mutex_init(&sys_tip.sys_sts->blue_mutex, NULL);

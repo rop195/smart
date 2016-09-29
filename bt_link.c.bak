@@ -119,6 +119,47 @@ void *bt_link(void *arg)
 	char                addr[19];
 	uint8_t            *src;
 	uint32_t            n, i;
+	
+	bddevice = (Bd_Device *)malloc(sizeof(Bd_Device));
+
+	memset(bddevice->EquipUID, 0, sizeof(Bd_Device));
+
+	bddevice->EquipMAC[0] = 0x00;
+	bddevice->EquipMAC[1] = 0x0E;
+	bddevice->EquipMAC[2] = 0x0E;
+	bddevice->EquipMAC[3] = 0x11;
+	bddevice->EquipMAC[4] = 0x5F;
+	bddevice->EquipMAC[5] = 0xC4;
+
+	bddevice->PINLen = 4;
+
+	bddevice->PinCode[0] = 1; 
+	bddevice->PinCode[1] = 2; 
+	bddevice->PinCode[2] = 3; 
+	bddevice->PinCode[3] = 4; 
+
+	memcpy(bddevice->EquipUID, "AATJ00017000310000000002", 24);
+
+	filefd = open(BT_DEVICE_LIST, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	write(filefd, bddevice->EquipUID, sizeof(Bd_Device));
+
+	memset(bddevice->EquipUID, 0, sizeof(Bd_Device));
+
+	bddevice->EquipMAC[0] = 0x8C;
+	bddevice->EquipMAC[1] = 0xDE;
+	bddevice->EquipMAC[2] = 0x52;
+	bddevice->EquipMAC[3] = 0xFD;
+	bddevice->EquipMAC[4] = 0x74;
+	bddevice->EquipMAC[5] = 0x5A;
+
+	memcpy(bddevice->EquipUID, "ABTJ00017000110000000001", 24);
+
+	write(filefd, bddevice->EquipUID, sizeof(Bd_Device));
+
+	close(filefd);
+
+	free(bddevice);
 
 
 	sys_tip = (System_Tip *)arg;

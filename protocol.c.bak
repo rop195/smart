@@ -527,17 +527,13 @@ static int smrt_query_btonline(Message *msg, Msg_Header *head, uint8_t *buf, Sys
 	{
 		if(len > sizeof(Smrt_BtCnntNode))
 		{
-			if(node->socketfd > 0)
-			{
-				memcpy(node->EquipUID,  bt->EquipUID,  sizeof(node->EquipUID));
-				memcpy(node->EquipName, bt->EquipName, sizeof(node->EquipName));
+			memcpy(node->EquipUID,  bt->EquipUID,  sizeof(node->EquipUID));
+			memcpy(node->EquipName, bt->EquipName, sizeof(node->EquipName));
 
-				len            -= sizeof(Smrt_BtCnntNode);
-				head->TotalLen += sizeof(Smrt_BtCnntNode);
-				node++;
-			}
-
-			bt = (Bd_Node *)bt->next;
+			len            -= sizeof(Smrt_BtCnntNode);
+			head->TotalLen += sizeof(Smrt_BtCnntNode);
+			bt              = (Bd_Node *)bt->next;
+			node++;
 		}
 		else
 		{
